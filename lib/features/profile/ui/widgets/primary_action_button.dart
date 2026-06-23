@@ -1,0 +1,39 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_coffeee/core/constants/app_constants.dart';
+import 'package:flutter_coffeee/core/theme/app_colors.dart';
+import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
+
+class PrimaryActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+
+  const PrimaryActionButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: AppColors.accentColor,
+        borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
+          splashColor: AppColors.accentPressed.withValues(alpha: 0.3),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.primaryButton,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

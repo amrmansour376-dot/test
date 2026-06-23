@@ -10,6 +10,7 @@ class LabeledInputField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool readOnly;
   final VoidCallback? onTap;
+  final String? Function(String?)? validator;
 
   const LabeledInputField({
     super.key,
@@ -19,6 +20,7 @@ class LabeledInputField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.readOnly = false,
     this.onTap,
+    this.validator,
   });
 
   @override
@@ -34,6 +36,7 @@ class LabeledInputField extends StatelessWidget {
           keyboardType: keyboardType,
           readOnly: readOnly,
           onTap: onTap,
+          validator: validator,
           style: AppTextStyles.inputValue,
           decoration: InputDecoration(
             filled: true,

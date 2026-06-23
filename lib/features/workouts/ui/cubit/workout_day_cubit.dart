@@ -23,7 +23,7 @@ class WorkoutDayCubit extends Cubit<WorkoutDayState> {
       cachedDays = response;
       emit(WorkoutDaySuccess(workoutDay: cachedDays));
     } catch (e) {
-      print(e.toString());
+      emit(WorkoutDayFail(erroMess: e.toString()));
     }
   }
 }

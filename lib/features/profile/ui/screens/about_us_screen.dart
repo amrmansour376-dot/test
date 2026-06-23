@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
+import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
 import 'package:flutter_coffeee/features/profile/ui/widgets/about_info_tile.dart';
 import 'package:flutter_coffeee/features/profile/ui/widgets/social_media_button.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
+
+  static void _openSocial(BuildContext context, String platform) {
+    AppSnackbars.showInfo(
+      context,
+      'Opening $platform profile for ${AppConstants.appName}',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,13 +142,21 @@ class AboutUsScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        SocialMediaButton.instagram(),
+                        SocialMediaButton.instagram(
+                          onTap: () => _openSocial(context, 'Instagram'),
+                        ),
                         const SizedBox(width: 16),
-                        SocialMediaButton.facebook(),
+                        SocialMediaButton.facebook(
+                          onTap: () => _openSocial(context, 'Facebook'),
+                        ),
                         const SizedBox(width: 16),
-                        SocialMediaButton.twitter(),
+                        SocialMediaButton.twitter(
+                          onTap: () => _openSocial(context, 'Twitter'),
+                        ),
                         const SizedBox(width: 16),
-                        SocialMediaButton.youtube(),
+                        SocialMediaButton.youtube(
+                          onTap: () => _openSocial(context, 'YouTube'),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 40),

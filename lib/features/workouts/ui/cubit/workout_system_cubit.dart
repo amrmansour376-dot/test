@@ -16,7 +16,7 @@ class WorkoutSystemCubit extends Cubit<WorkoutSystemState> {
       final response = await workoutRepository.fetchWorkoutSystems();
       emit(WorkoutSystemSuccess(WorkoutModel: response));
     } catch (e) {
-      print(e.toString());
+      emit(WorkoutSystemFail(errorMess: e.toString()));
     }
   }
 }

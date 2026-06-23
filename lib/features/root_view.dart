@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_coffeee/core/state/app_state.dart';
 import 'package:flutter_coffeee/core/theme/app_color.dart';
 import 'package:flutter_coffeee/features/exercises/ui/screens/exercise_view.dart';
 import 'package:flutter_coffeee/features/home/ui/screens/home_view.dart';
@@ -17,30 +18,48 @@ class _RootViewState extends State<RootView> {
   final PageController controller = PageController();
   int indexScreen = 0;
 
-  // الخمس شاشات الخاصة بالتطبيق
-  final List<Widget> screens = [
-    const HomeView(),
-    const WorkoutsView(),
-    const ExerciseView(),
-    const ProgressView(),
-    const ProfileView(),
+  final List<Widget> screens = const [
+    HomeView(),
+    WorkoutsView(),
+    ExerciseView(),
+    ProgressView(),
+    ProfileView(),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() => indexScreen = index);
-    controller.animateToPage(
-      indexScreen,
-      duration: const Duration(
-        milliseconds: 200,
-      ), // تعديل الوقت ليكون التنقل أنعم
-      curve: Curves.easeInOut,
-    );
+  @override
+  void initState() {
+    super.initState();
+    AppState.instance.addListener(_onAppStateChanged);
+    indexScreen = AppState.instance.rootTabIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.hasClients && indexScreen != 0) {
+        controller.jumpToPage(indexScreen);
+      }
+    });
   }
 
   @override
   void dispose() {
-    controller.dispose(); // تنظيف الـ Controller من الذاكرة
+    AppState.instance.removeListener(_onAppStateChanged);
+    controller.dispose();
     super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    AppState.instance.switchTab(index);
+  }
+
+  void _onAppStateChanged() {
+    final targetIndex = AppState.instance.rootTabIndex;
+    if (targetIndex == indexScreen) return;
+    setState(() => indexScreen = targetIndex);
+    if (controller.hasClients) {
+      controller.animateToPage(
+        targetIndex,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -48,42 +67,27 @@ class _RootViewState extends State<RootView> {
     return Scaffold(
       body: PageView(
         controller: controller,
-        physics:
-            const NeverScrollableScrollPhysics(), // منع السحب باليد لتجنب تداخل الشاشات مع ألعاب الجيم
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (value) => setState(() => indexScreen = value),
         children: screens,
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 8,
-        ), // مسافة رأسية مريحة للأزرار
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: const BoxDecoration(
           color: AppColors.cardColor,
           border: Border(
-            top: BorderSide(
-              color: Color(0xff2C2C2E),
-              width: 0.5,
-            ), // خط علوي خفيف جداً للفصل
+            top: BorderSide(color: Color(0xff2C2C2E), width: 0.5),
           ),
         ),
         child: SafeArea(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home_outlined, 0), // الشاشة الرئيسية
-              _buildNavItem(
-                Icons.fitness_center,
-                1,
-              ), // التمارين والأنظمة (Workouts)
-              _buildNavItem(
-                Icons.format_list_bulleted,
-                2,
-              ), // مكتبة التمارين (Exercise Library)
-              _buildNavItem(
-                Icons.bar_chart_outlined,
-                3,
-              ), // شاشة التقدم (Progress)
-              _buildNavItem(Icons.person_outline, 4), // الحساب الشخصي (Profile)
+              _buildNavItem(Icons.home_outlined, 0),
+              _buildNavItem(Icons.fitness_center, 1),
+              _buildNavItem(Icons.format_list_bulleted, 2),
+              _buildNavItem(Icons.bar_chart_outlined, 3),
+              _buildNavItem(Icons.person_outline, 4),
             ],
           ),
         ),
@@ -97,7 +101,7 @@ class _RootViewState extends State<RootView> {
       icon: Icon(
         icon,
         color: isSelected ? AppColors.accentColor : AppColors.textSecondary,
-        size: isSelected ? 33 : 26, // حركة تكبير خفيفة واحترافية عند الاختيار
+        size: isSelected ? 33 : 26,
       ),
       onPressed: () => _onItemTapped(index),
     );

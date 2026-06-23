@@ -6,11 +6,13 @@ import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
 class PrimaryActionButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   const PrimaryActionButton({
     super.key,
     required this.label,
     this.onPressed,
+    this.isLoading = false,
   });
 
   @override
@@ -21,16 +23,25 @@ class PrimaryActionButton extends StatelessWidget {
         color: AppColors.accentColor,
         borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
         child: InkWell(
-          onTap: onPressed,
+          onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
           splashColor: AppColors.accentPressed.withValues(alpha: 0.3),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.primaryButton,
-            ),
+            child: isLoading
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.black,
+                    ),
+                  )
+                : Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.primaryButton,
+                  ),
           ),
         ),
       ),

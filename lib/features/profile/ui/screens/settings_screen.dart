@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
+import 'package:flutter_coffeee/core/state/app_state.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
+import 'package:flutter_coffeee/core/utils/app_dialogs.dart';
+import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
+import 'package:flutter_coffeee/core/utils/session_actions.dart';
+import 'package:flutter_coffeee/features/profile/ui/screens/change_password_screen.dart';
+import 'package:flutter_coffeee/features/profile/ui/screens/legal_document_screen.dart';
 import 'package:flutter_coffeee/features/profile/ui/widgets/logout_button.dart';
 import 'package:flutter_coffeee/features/profile/ui/widgets/profile_screen_header.dart';
 import 'package:flutter_coffeee/features/profile/ui/widgets/settings_section.dart';
@@ -14,80 +20,197 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkModeEnabled = true;
+  AppSettings get _settings => AppState.instance.settings;
+
+  Future<void> _pickUnits() async {
+    const options = ['Metric (kg, cm)', 'Imperial (lb, ft)'];
+    final selected = await AppDialogs.showOptionsSheet(
+      context,
+      title: 'Units',
+      options: options,
+      selected: _settings.units,
+    );
+    if (selected == null || !mounted) return;
+
+    AppState.instance.updateSettings(
+      AppSettings(
+        units: selected,
+        workoutRemindersEnabled: _settings.workoutRemindersEnabled,
+        workoutReminderTime: _settings.workoutReminderTime,
+        restTimerSeconds: _settings.restTimerSeconds,
+        darkModeEnabled: _settings.darkModeEnabled,
+      ),
+    );
+    AppSnackbars.showSuccess(context, 'Units updated');
+  }
+
+  Future<void> _configureReminders() async {
+    final enabled = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Workout Reminders'),
+        content: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Enable reminders'),
+          value: _settings.workoutRemindersEnabled,
+          activeThumbColor: AppColors.accentColor,
+          onChanged: (value) => Navigator.pop(context, value),
+        ),
+      ),
+    );
+
+    if (enabled == null || !mounted) return;
+
+    var reminderTime = _settings.workoutReminderTime;
+    if (enabled) {
+      final parts = reminderTime.split(' ');
+      final timeParts = parts.first.split(':');
+      final initial = TimeOfDay(
+        hour: int.tryParse(timeParts.first) ?? 7,
+        minute: int.tryParse(timeParts.last) ?? 0,
+      );
+      final picked = await AppDialogs.pickReminderTime(context, initial);
+      if (picked != null) {
+        final hour = picked.hourOfPeriod == 0 ? 12 : picked.hourOfPeriod;
+        final period = picked.period == DayPeriod.am ? 'AM' : 'PM';
+        reminderTime = '$hour:${picked.minute.toString().padLeft(2, '0')} $period';
+      }
+    }
+
+    if (!mounted) return;
+    AppState.instance.updateSettings(
+      AppSettings(
+        units: _settings.units,
+        workoutRemindersEnabled: enabled,
+        workoutReminderTime: reminderTime,
+        restTimerSeconds: _settings.restTimerSeconds,
+        darkModeEnabled: _settings.darkModeEnabled,
+      ),
+    );
+    AppSnackbars.showSuccess(context, 'Reminder settings updated');
+  }
+
+  Future<void> _pickRestTimer() async {
+    const options = ['30 sec', '45 sec', '60 sec', '90 sec'];
+    final selected = await AppDialogs.showOptionsSheet(
+      context,
+      title: 'Rest Timer',
+      options: options,
+      selected: _settings.restTimerLabel,
+    );
+    if (selected == null || !mounted) return;
+
+    final seconds = int.parse(selected.split(' ').first);
+    AppState.instance.updateSettings(
+      AppSettings(
+        units: _settings.units,
+        workoutRemindersEnabled: _settings.workoutRemindersEnabled,
+        workoutReminderTime: _settings.workoutReminderTime,
+        restTimerSeconds: seconds,
+        darkModeEnabled: _settings.darkModeEnabled,
+      ),
+    );
+    AppSnackbars.showSuccess(context, 'Rest timer updated');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.screenHorizontalPadding,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              const ProfileScreenHeader(
-                title: 'Settings',
-                useLargeTitle: true,
+    return ListenableBuilder(
+      listenable: AppState.instance,
+      builder: (context, _) {
+        final settings = AppState.instance.settings;
+
+        return Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.screenHorizontalPadding,
               ),
-              const SizedBox(height: 8),
-              SettingsSection(
-                title: 'Preferences',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SettingsTile(
-                    title: 'Units',
-                    trailingText: AppConstants.unitsValue,
-                    onTap: () {},
+                  const SizedBox(height: 16),
+                  const ProfileScreenHeader(
+                    title: 'Settings',
+                    useLargeTitle: true,
                   ),
-                  SettingsTile(
-                    title: 'Workout Reminders',
-                    trailingText: AppConstants.workoutRemindersValue,
-                    onTap: () {},
+                  const SizedBox(height: 8),
+                  SettingsSection(
+                    title: 'Preferences',
+                    children: [
+                      SettingsTile(
+                        title: 'Units',
+                        trailingText: settings.units,
+                        onTap: _pickUnits,
+                      ),
+                      SettingsTile(
+                        title: 'Workout Reminders',
+                        trailingText: settings.workoutRemindersLabel,
+                        onTap: _configureReminders,
+                      ),
+                      SettingsTile(
+                        title: 'Rest Timer',
+                        trailingText: settings.restTimerLabel,
+                        onTap: _pickRestTimer,
+                      ),
+                      SettingsTile(
+                        title: 'Dark Mode',
+                        showDivider: false,
+                        trailing: SettingsToggle(value: settings.darkModeEnabled),
+                        onTap: () {
+                          AppState.instance.toggleDarkMode(
+                            !settings.darkModeEnabled,
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  SettingsTile(
-                    title: 'Rest Timer',
-                    trailingText: AppConstants.restTimerValue,
-                    onTap: () {},
+                  const SizedBox(height: 32),
+                  SettingsSection(
+                    title: 'Account',
+                    children: [
+                      SettingsTile(
+                        title: 'Change Password',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
+                        ),
+                      ),
+                      SettingsTile(
+                        title: 'Privacy Policy',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LegalDocumentScreen.privacy(),
+                          ),
+                        ),
+                      ),
+                      SettingsTile(
+                        title: 'Terms of Service',
+                        showDivider: false,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LegalDocumentScreen.terms(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  SettingsTile(
-                    title: 'Dark Mode',
-                    showDivider: false,
-                    trailing: SettingsToggle(value: _darkModeEnabled),
-                    onTap: () {
-                      setState(() => _darkModeEnabled = !_darkModeEnabled);
-                    },
+                  const SizedBox(height: 16),
+                  LogoutButton(
+                    onPressed: () => SessionActions.logout(context),
                   ),
+                  const SizedBox(height: 32),
                 ],
               ),
-              const SizedBox(height: 32),
-              SettingsSection(
-                title: 'Account',
-                children: [
-                  SettingsTile(
-                    title: 'Change Password',
-                    onTap: () {},
-                  ),
-                  SettingsTile(
-                    title: 'Privacy Policy',
-                    onTap: () {},
-                  ),
-                  SettingsTile(
-                    title: 'Terms of Service',
-                    showDivider: false,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              LogoutButton(onPressed: () {}),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

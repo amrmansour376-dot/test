@@ -38,7 +38,21 @@ class _PresetProgramsState extends State<PresetPrograms>
             );
           }
           if (state is WorkoutSystemFail) {
-            return Center(child: CustomText(text: "${state.errorMess}"));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CustomText(text: state.errorMess),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context
+                        .read<WorkoutSystemCubit>()
+                        .fetchWorkoutSystems(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
           }
           if (state is WorkoutSystemSuccess) {
             final data = state.WorkoutModel;

@@ -36,7 +36,21 @@ class _WorkoutDayDetailsState extends State<WorkoutDayDetails> {
         }
 
         if (state is WorkoutDayFail) {
-          return Center(child: CustomText(text: state.erroMess));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CustomText(text: state.erroMess),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context
+                      .read<WorkoutDayCubit>()
+                      .fetchWorkoutDay(widget.systemId),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
         }
 
         if (state is WorkoutDaySuccess) {

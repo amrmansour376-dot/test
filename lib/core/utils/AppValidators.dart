@@ -57,4 +57,47 @@ class AppValidators {
     }
     return null;
   }
+
+  static String? requiredField(String? value, {String label = 'This field'}) {
+    if (value == null || value.trim().isEmpty) {
+      return '$label is required';
+    }
+    return null;
+  }
+
+  static String? fullName(String? value) {
+    final requiredResult = requiredField(value, label: 'Full name');
+    if (requiredResult != null) return requiredResult;
+
+    if (value!.trim().length < 2) {
+      return 'Full name is too short';
+    }
+    return null;
+  }
+
+  static String? height(String? value) {
+    final requiredResult = requiredField(value, label: 'Height');
+    if (requiredResult != null) return requiredResult;
+
+    final digits = RegExp(r'\d+').stringMatch(value!.trim());
+    if (digits == null) {
+      return 'Enter height with a number (e.g. 180 cm)';
+    }
+    return null;
+  }
+
+  static String? weight(String? value) {
+    final requiredResult = requiredField(value, label: 'Weight');
+    if (requiredResult != null) return requiredResult;
+
+    final digits = RegExp(r'\d+').stringMatch(value!.trim());
+    if (digits == null) {
+      return 'Enter weight with a number (e.g. 78 kg)';
+    }
+    return null;
+  }
+
+  static String? dateOfBirth(String? value) {
+    return requiredField(value, label: 'Date of birth');
+  }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/utils/AppValidators.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
@@ -35,20 +35,17 @@ class _CreateProgramScreenState extends State<CreateProgramScreen> {
     setState(() => _isSaving = true);
     await Future<void>.delayed(const Duration(milliseconds: 700));
 
-    AppState.instance.addCustomProgram(
-      CustomProgram(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        daysPerWeek: _daysPerWeek,
-        createdAt: DateTime.now(),
-      ),
+    final program = MockCustomProgram(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      daysPerWeek: _daysPerWeek,
     );
 
     if (!mounted) return;
     setState(() => _isSaving = false);
     AppSnackbars.showSuccess(context, 'Program created successfully');
-    Navigator.pop(context);
+    Navigator.pop(context, program);
   }
 
   @override

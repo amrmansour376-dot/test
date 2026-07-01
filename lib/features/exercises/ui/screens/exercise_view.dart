@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/data/local_exercise_catalog.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
+import 'package:flutter_coffeee/core/ui/app_ui_bridge.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
 class ExerciseView extends StatefulWidget {
-  const ExerciseView({super.key});
+  final ValueChanged<int> onSwitchTab;
+
+  const ExerciseView({super.key, required this.onSwitchTab});
 
   @override
   State<ExerciseView> createState() => _ExerciseViewState();
@@ -18,6 +20,7 @@ class _ExerciseViewState extends State<ExerciseView> {
   final _searchController = TextEditingController();
   int _categoryIndex = 0;
   bool _favoritesOnly = false;
+  final Set<String> _favoriteExerciseIds = {};
 
   @override
   void dispose() {
@@ -25,137 +28,147 @@ class _ExerciseViewState extends State<ExerciseView> {
     super.dispose();
   }
 
+  List<MockExercise> _filteredExercises() {
+    final query = _searchController.text;
+    final category = MockData.exerciseCategories[_categoryIndex];
+
+    return MockData.exercises.where((exercise) {
+      final matchesQuery = query.isEmpty ||
+          exercise.name.toLowerCase().contains(query.toLowerCase()) ||
+          exercise.muscleGroup.toLowerCase().contains(query.toLowerCase());
+      final matchesCategory = category == 'All' || exercise.category == category;
+      final matchesFavorite =
+          !_favoritesOnly || _favoriteExerciseIds.contains(exercise.id);
+      return matchesQuery && matchesCategory && matchesFavorite;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: AppState.instance,
-      builder: (context, _) {
-        final favorites = AppState.instance.favoriteExerciseIds;
-        final exercises = LocalExerciseCatalog.filter(
-          query: _searchController.text,
-          category: LocalExerciseCatalog.categories[_categoryIndex],
-          favoritesOnly: _favoritesOnly,
-          favoriteIds: favorites,
-        );
+    final exercises = _filteredExercises();
 
-        return Scaffold(
-          backgroundColor: AppColors.backgroundColor,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.screenHorizontalPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  Text('Exercise Library', style: AppTextStyles.screenTitleLarge),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (_) => setState(() {}),
-                    style: AppTextStyles.inputValue,
-                    decoration: InputDecoration(
-                      hintText: 'Search exercises...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: AppColors.inputBackground,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ToggleSwitch(
-                    minWidth: 72,
-                    cornerRadius: 20,
-                    activeBgColors: const [
-                      [AppColors.accentColor],
-                      [AppColors.accentColor],
-                      [AppColors.accentColor],
-                      [AppColors.accentColor],
-                    ],
-                    inactiveBgColor: AppColors.cardColor,
-                    initialLabelIndex: _categoryIndex,
-                    totalSwitches: LocalExerciseCatalog.categories.length,
-                    labels: LocalExerciseCatalog.categories,
-                    onToggle: (index) {
-                      if (index != null) {
-                        setState(() => _categoryIndex = index);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Show favorites only'),
-                    value: _favoritesOnly,
-                    activeThumbColor: AppColors.accentColor,
-                    onChanged: (value) => setState(() => _favoritesOnly = value),
-                  ),
-                  Expanded(
-                    child: exercises.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No exercises found',
-                              style: AppTextStyles.aboutDescription,
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: exercises.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final exercise = exercises[index];
-                              final isFavorite =
-                                  AppState.instance.isFavorite(exercise.id);
-                              return ListTile(
-                                tileColor: AppColors.cardColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                title: Text(
-                                  exercise.name,
-                                  style: AppTextStyles.settingsItem,
-                                ),
-                                subtitle: Text(
-                                  '${exercise.muscleGroup} · ${exercise.defaultSets}x${exercise.defaultReps}',
-                                  style: AppTextStyles.settingsValue,
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(
-                                    isFavorite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: isFavorite
-                                        ? AppColors.accentColor
-                                        : AppColors.textSecondary,
-                                  ),
-                                  onPressed: () {
-                                    AppState.instance.toggleFavorite(exercise.id);
-                                    AppSnackbars.showInfo(
-                                      context,
-                                      isFavorite
-                                          ? 'Removed from favorites'
-                                          : 'Added to favorites',
-                                    );
-                                  },
-                                ),
-                                onTap: () => _showExerciseDetails(context, exercise),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.screenHorizontalPadding,
           ),
-        );
-      },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Text('Exercise Library', style: AppTextStyles.screenTitleLarge),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                style: AppTextStyles.inputValue,
+                decoration: InputDecoration(
+                  hintText: 'Search exercises...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: AppColors.inputBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ToggleSwitch(
+                minWidth: 72,
+                cornerRadius: 20,
+                activeBgColors: const [
+                  [AppColors.accentColor],
+                  [AppColors.accentColor],
+                  [AppColors.accentColor],
+                  [AppColors.accentColor],
+                ],
+                inactiveBgColor: AppColors.cardColor,
+                initialLabelIndex: _categoryIndex,
+                totalSwitches: MockData.exerciseCategories.length,
+                labels: MockData.exerciseCategories,
+                onToggle: (index) {
+                  if (index != null) {
+                    setState(() => _categoryIndex = index);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Show favorites only'),
+                value: _favoritesOnly,
+                activeThumbColor: AppColors.accentColor,
+                onChanged: (value) => setState(() => _favoritesOnly = value),
+              ),
+              Expanded(
+                child: exercises.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No exercises found',
+                          style: AppTextStyles.aboutDescription,
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: exercises.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final exercise = exercises[index];
+                          final isFavorite =
+                              _favoriteExerciseIds.contains(exercise.id);
+                          return ListTile(
+                            tileColor: AppColors.cardColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            title: Text(
+                              exercise.name,
+                              style: AppTextStyles.settingsItem,
+                            ),
+                            subtitle: Text(
+                              '${exercise.muscleGroup} · ${exercise.defaultSets}x${exercise.defaultReps}',
+                              style: AppTextStyles.settingsValue,
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: isFavorite
+                                    ? AppColors.accentColor
+                                    : AppColors.textSecondary,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (isFavorite) {
+                                    _favoriteExerciseIds.remove(exercise.id);
+                                  } else {
+                                    _favoriteExerciseIds.add(exercise.id);
+                                  }
+                                });
+                                AppSnackbars.showInfo(
+                                  context,
+                                  isFavorite
+                                      ? 'Removed from favorites'
+                                      : 'Added to favorites',
+                                );
+                              },
+                            ),
+                            onTap: () => _showExerciseDetails(context, exercise),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  void _showExerciseDetails(BuildContext context, ExerciseItem exercise) {
+  void _showExerciseDetails(BuildContext context, MockExercise exercise) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.cardColor,
@@ -189,7 +202,8 @@ class _ExerciseViewState extends State<ExerciseView> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
-                  AppState.instance.switchTab(1);
+                  AppUIBridge.switchTab?.call(1);
+                  widget.onSwitchTab(1);
                   AppSnackbars.showInfo(
                     context,
                     'Open Workouts to start a program with this exercise',

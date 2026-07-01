@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
 
@@ -20,92 +20,86 @@ class ProgressView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: AppState.instance,
-      builder: (context, _) {
-        final state = AppState.instance;
-        final history = state.workoutHistory;
+    final history = MockData.workoutHistory;
 
-        return Scaffold(
-          backgroundColor: AppColors.backgroundColor,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.screenHorizontalPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.screenHorizontalPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Text('Progress', style: AppTextStyles.screenTitleLarge),
+              const SizedBox(height: 24),
+              Row(
                 children: [
-                  const SizedBox(height: 16),
-                  Text('Progress', style: AppTextStyles.screenTitleLarge),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SummaryCard(
-                          label: 'This Week',
-                          value: '${state.weeklyWorkoutCount}',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _SummaryCard(
-                          label: 'All Time',
-                          value: '${state.totalWorkouts}',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text('Recent Sessions', style: AppTextStyles.sectionHeader),
-                  const SizedBox(height: 12),
                   Expanded(
-                    child: history.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Complete a workout day to see progress here.',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.aboutDescription,
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: history.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final session = history[index];
-                              return ListTile(
-                                tileColor: AppColors.cardColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                leading: CircleAvatar(
-                                  backgroundColor:
-                                      AppColors.accentColor.withValues(alpha: 0.2),
-                                  child: const Icon(
-                                    Icons.check,
-                                    color: AppColors.accentColor,
-                                  ),
-                                ),
-                                title: Text(
-                                  session.dayName,
-                                  style: AppTextStyles.settingsItem,
-                                ),
-                                subtitle: Text(
-                                  '${session.muscleGroup} · ${session.exerciseCount} exercises\n'
-                                  '${_formatDate(session.completedAt)}',
-                                  style: AppTextStyles.settingsValue,
-                                ),
-                                isThreeLine: true,
-                              );
-                            },
-                          ),
+                    child: _SummaryCard(
+                      label: 'This Week',
+                      value: '${MockData.weeklyWorkoutCount}',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SummaryCard(
+                      label: 'All Time',
+                      value: '${MockData.totalWorkouts}',
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+              Text('Recent Sessions', style: AppTextStyles.sectionHeader),
+              const SizedBox(height: 12),
+              Expanded(
+                child: history.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Complete a workout day to see progress here.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.aboutDescription,
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: history.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final session = history[index];
+                          return ListTile(
+                            tileColor: AppColors.cardColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  AppColors.accentColor.withValues(alpha: 0.2),
+                              child: const Icon(
+                                Icons.check,
+                                color: AppColors.accentColor,
+                              ),
+                            ),
+                            title: Text(
+                              session.dayName,
+                              style: AppTextStyles.settingsItem,
+                            ),
+                            subtitle: Text(
+                              '${session.muscleGroup} · ${session.exerciseCount} exercises\n'
+                              '${_formatDate(session.completedAt)}',
+                              style: AppTextStyles.settingsValue,
+                            ),
+                            isThreeLine: true,
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

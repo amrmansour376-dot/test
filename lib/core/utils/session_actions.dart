@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
 import 'package:flutter_coffeee/core/utils/app_dialogs.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
 
@@ -17,7 +16,6 @@ class SessionActions {
 
     if (!confirmed || !context.mounted) return;
 
-    AppState.instance.logout();
     AppSnackbars.showSuccess(context, 'Logged out successfully');
 
     if (Navigator.canPop(context)) {

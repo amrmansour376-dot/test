@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_coffeee/core/data/local_exercise_catalog.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_color.dart';
 import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_coffeee/features/workouts/ui/widgets/custom_backBtn.dart
 class ExerciseListView extends StatefulWidget {
   final String name;
   final String muscle;
+
   const ExerciseListView({super.key, required this.muscle, required this.name});
 
   @override
@@ -24,12 +24,6 @@ class _ExerciseListViewState extends State<ExerciseListView> {
     setState(() => _isCompleting = true);
     await Future<void>.delayed(const Duration(milliseconds: 900));
 
-    AppState.instance.recordWorkoutSession(
-      dayName: widget.name,
-      muscleGroup: widget.muscle,
-      exerciseCount: exerciseCount,
-    );
-
     if (!mounted) return;
     setState(() => _isCompleting = false);
     AppSnackbars.showSuccess(context, 'Workout completed! Progress updated.');
@@ -38,7 +32,7 @@ class _ExerciseListViewState extends State<ExerciseListView> {
 
   @override
   Widget build(BuildContext context) {
-    final exercises = LocalExerciseCatalog.forMuscleGroup(widget.muscle);
+    final exercises = MockData.exercisesForMuscle(widget.muscle);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,

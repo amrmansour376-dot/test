@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
 import 'package:flutter_coffeee/core/theme/app_color.dart';
+import 'package:flutter_coffeee/core/ui/app_ui_bridge.dart';
 import 'package:flutter_coffeee/features/exercises/ui/screens/exercise_view.dart';
 import 'package:flutter_coffeee/features/home/ui/screens/home_view.dart';
 import 'package:flutter_coffeee/features/profile/ui/screens/profile_view.dart';
@@ -8,7 +8,14 @@ import 'package:flutter_coffeee/features/progress/ui/screens/progress_view.dart'
 import 'package:flutter_coffeee/features/workouts/ui/screens/workouts_view.dart';
 
 class RootView extends StatefulWidget {
-  const RootView({super.key});
+  final bool darkModeEnabled;
+  final ValueChanged<bool> onDarkModeChanged;
+
+  const RootView({
+    super.key,
+    required this.darkModeEnabled,
+    required this.onDarkModeChanged,
+  });
 
   @override
   State<RootView> createState() => _RootViewState();
@@ -18,44 +25,27 @@ class _RootViewState extends State<RootView> {
   final PageController controller = PageController();
   int indexScreen = 0;
 
-  final List<Widget> screens = const [
-    HomeView(),
-    WorkoutsView(),
-    ExerciseView(),
-    ProgressView(),
-    ProfileView(),
-  ];
-
   @override
   void initState() {
     super.initState();
-    AppState.instance.addListener(_onAppStateChanged);
-    indexScreen = AppState.instance.rootTabIndex;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.hasClients && indexScreen != 0) {
-        controller.jumpToPage(indexScreen);
-      }
-    });
+    AppUIBridge.switchTab = _switchTab;
   }
 
   @override
   void dispose() {
-    AppState.instance.removeListener(_onAppStateChanged);
+    if (AppUIBridge.switchTab == _switchTab) {
+      AppUIBridge.switchTab = null;
+    }
     controller.dispose();
     super.dispose();
   }
 
-  void _onItemTapped(int index) {
-    AppState.instance.switchTab(index);
-  }
-
-  void _onAppStateChanged() {
-    final targetIndex = AppState.instance.rootTabIndex;
-    if (targetIndex == indexScreen) return;
-    setState(() => indexScreen = targetIndex);
+  void _switchTab(int index) {
+    if (index == indexScreen) return;
+    setState(() => indexScreen = index);
     if (controller.hasClients) {
       controller.animateToPage(
-        targetIndex,
+        index,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
       );
@@ -64,12 +54,23 @@ class _RootViewState extends State<RootView> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomeView(onSwitchTab: _switchTab),
+      const WorkoutsView(),
+      ExerciseView(onSwitchTab: _switchTab),
+      const ProgressView(),
+      ProfileView(
+        darkModeEnabled: widget.darkModeEnabled,
+        onDarkModeChanged: widget.onDarkModeChanged,
+      ),
+    ];
+
     return Scaffold(
       body: PageView(
         controller: controller,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (value) => setState(() => indexScreen = value),
-        children: screens,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -103,7 +104,7 @@ class _RootViewState extends State<RootView> {
         color: isSelected ? AppColors.accentColor : AppColors.textSecondary,
         size: isSelected ? 33 : 26,
       ),
-      onPressed: () => _onItemTapped(index),
+      onPressed: () => _switchTab(index),
     );
   }
 }

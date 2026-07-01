@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/theme/app_text_styles.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
@@ -21,15 +21,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedGoals = Map<String, bool>.from(AppState.instance.fitnessGoals);
+    _selectedGoals = Map<String, bool>.from(MockData.fitnessGoals);
   }
 
   Future<void> _saveGoals() async {
     setState(() => _isSaving = true);
     await Future<void>.delayed(const Duration(milliseconds: 600));
-    for (final entry in _selectedGoals.entries) {
-      AppState.instance.updateGoal(entry.key, entry.value);
-    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
     AppSnackbars.showSuccess(context, 'Goals updated successfully');

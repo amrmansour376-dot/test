@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/utils/app_dialogs.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
@@ -13,14 +13,39 @@ import 'package:flutter_coffeee/features/profile/ui/widgets/settings_section.dar
 import 'package:flutter_coffeee/features/profile/ui/widgets/settings_tile.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool darkModeEnabled;
+  final ValueChanged<bool> onDarkModeChanged;
+
+  const SettingsScreen({
+    super.key,
+    required this.darkModeEnabled,
+    required this.onDarkModeChanged,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  AppSettings get _settings => AppState.instance.settings;
+  late String _units;
+  late bool _workoutRemindersEnabled;
+  late String _workoutReminderTime;
+  late int _restTimerSeconds;
+
+  @override
+  void initState() {
+    super.initState();
+    _units = MockData.units;
+    _workoutRemindersEnabled = MockData.workoutRemindersEnabled;
+    _workoutReminderTime = MockData.workoutReminderTime;
+    _restTimerSeconds = MockData.restTimerSeconds;
+  }
+
+  String get _restTimerLabel => '$_restTimerSeconds sec';
+
+  String get _workoutRemindersLabel => _workoutRemindersEnabled
+      ? 'On · $_workoutReminderTime'
+      : 'Off';
 
   Future<void> _pickUnits() async {
     const options = ['Metric (kg, cm)', 'Imperial (lb, ft)'];
@@ -28,19 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       title: 'Units',
       options: options,
-      selected: _settings.units,
+      selected: _units,
     );
     if (selected == null || !mounted) return;
 
-    AppState.instance.updateSettings(
-      AppSettings(
-        units: selected,
-        workoutRemindersEnabled: _settings.workoutRemindersEnabled,
-        workoutReminderTime: _settings.workoutReminderTime,
-        restTimerSeconds: _settings.restTimerSeconds,
-        darkModeEnabled: _settings.darkModeEnabled,
-      ),
-    );
+    setState(() => _units = selected);
     AppSnackbars.showSuccess(context, 'Units updated');
   }
 
@@ -52,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Enable reminders'),
-          value: _settings.workoutRemindersEnabled,
+          value: _workoutRemindersEnabled,
           activeThumbColor: AppColors.accentColor,
           onChanged: (value) => Navigator.pop(context, value),
         ),
@@ -61,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (enabled == null || !mounted) return;
 
-    var reminderTime = _settings.workoutReminderTime;
+    var reminderTime = _workoutReminderTime;
     if (enabled) {
       final parts = reminderTime.split(' ');
       final timeParts = parts.first.split(':');
@@ -78,15 +95,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (!mounted) return;
-    AppState.instance.updateSettings(
-      AppSettings(
-        units: _settings.units,
-        workoutRemindersEnabled: enabled,
-        workoutReminderTime: reminderTime,
-        restTimerSeconds: _settings.restTimerSeconds,
-        darkModeEnabled: _settings.darkModeEnabled,
-      ),
-    );
+    setState(() {
+      _workoutRemindersEnabled = enabled;
+      _workoutReminderTime = reminderTime;
+    });
     AppSnackbars.showSuccess(context, 'Reminder settings updated');
   }
 
@@ -96,121 +108,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       title: 'Rest Timer',
       options: options,
-      selected: _settings.restTimerLabel,
+      selected: _restTimerLabel,
     );
     if (selected == null || !mounted) return;
 
     final seconds = int.parse(selected.split(' ').first);
-    AppState.instance.updateSettings(
-      AppSettings(
-        units: _settings.units,
-        workoutRemindersEnabled: _settings.workoutRemindersEnabled,
-        workoutReminderTime: _settings.workoutReminderTime,
-        restTimerSeconds: seconds,
-        darkModeEnabled: _settings.darkModeEnabled,
-      ),
-    );
+    setState(() => _restTimerSeconds = seconds);
     AppSnackbars.showSuccess(context, 'Rest timer updated');
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: AppState.instance,
-      builder: (context, _) {
-        final settings = AppState.instance.settings;
-
-        return Scaffold(
-          backgroundColor: AppColors.backgroundColor,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.screenHorizontalPadding,
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.screenHorizontalPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              const ProfileScreenHeader(
+                title: 'Settings',
+                useLargeTitle: true,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 8),
+              SettingsSection(
+                title: 'Preferences',
                 children: [
-                  const SizedBox(height: 16),
-                  const ProfileScreenHeader(
-                    title: 'Settings',
-                    useLargeTitle: true,
+                  SettingsTile(
+                    title: 'Units',
+                    trailingText: _units,
+                    onTap: _pickUnits,
                   ),
-                  const SizedBox(height: 8),
-                  SettingsSection(
-                    title: 'Preferences',
-                    children: [
-                      SettingsTile(
-                        title: 'Units',
-                        trailingText: settings.units,
-                        onTap: _pickUnits,
-                      ),
-                      SettingsTile(
-                        title: 'Workout Reminders',
-                        trailingText: settings.workoutRemindersLabel,
-                        onTap: _configureReminders,
-                      ),
-                      SettingsTile(
-                        title: 'Rest Timer',
-                        trailingText: settings.restTimerLabel,
-                        onTap: _pickRestTimer,
-                      ),
-                      SettingsTile(
-                        title: 'Dark Mode',
-                        showDivider: false,
-                        trailing: SettingsToggle(value: settings.darkModeEnabled),
-                        onTap: () {
-                          AppState.instance.toggleDarkMode(
-                            !settings.darkModeEnabled,
-                          );
-                        },
-                      ),
-                    ],
+                  SettingsTile(
+                    title: 'Workout Reminders',
+                    trailingText: _workoutRemindersLabel,
+                    onTap: _configureReminders,
                   ),
-                  const SizedBox(height: 32),
-                  SettingsSection(
-                    title: 'Account',
-                    children: [
-                      SettingsTile(
-                        title: 'Change Password',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ChangePasswordScreen(),
-                          ),
-                        ),
-                      ),
-                      SettingsTile(
-                        title: 'Privacy Policy',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LegalDocumentScreen.privacy(),
-                          ),
-                        ),
-                      ),
-                      SettingsTile(
-                        title: 'Terms of Service',
-                        showDivider: false,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LegalDocumentScreen.terms(),
-                          ),
-                        ),
-                      ),
-                    ],
+                  SettingsTile(
+                    title: 'Rest Timer',
+                    trailingText: _restTimerLabel,
+                    onTap: _pickRestTimer,
                   ),
-                  const SizedBox(height: 16),
-                  LogoutButton(
-                    onPressed: () => SessionActions.logout(context),
+                  SettingsTile(
+                    title: 'Dark Mode',
+                    showDivider: false,
+                    trailing: SettingsToggle(value: widget.darkModeEnabled),
+                    onTap: () {
+                      widget.onDarkModeChanged(!widget.darkModeEnabled);
+                    },
                   ),
-                  const SizedBox(height: 32),
                 ],
               ),
-            ),
+              const SizedBox(height: 32),
+              SettingsSection(
+                title: 'Account',
+                children: [
+                  SettingsTile(
+                    title: 'Change Password',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordScreen(),
+                      ),
+                    ),
+                  ),
+                  SettingsTile(
+                    title: 'Privacy Policy',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalDocumentScreen.privacy(),
+                      ),
+                    ),
+                  ),
+                  SettingsTile(
+                    title: 'Terms of Service',
+                    showDivider: false,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalDocumentScreen.terms(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LogoutButton(
+                onPressed: () => SessionActions.logout(context),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

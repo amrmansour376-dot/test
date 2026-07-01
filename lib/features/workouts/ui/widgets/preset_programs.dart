@@ -1,11 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_coffeee/core/services/workout_services.dart';
-import 'package:flutter_coffeee/core/theme/app_color.dart';
-import 'package:flutter_coffeee/core/widget/custom_text.dart';
-import 'package:flutter_coffeee/features/workouts/data/repositories/workout_repo.dart';
-import 'package:flutter_coffeee/features/workouts/ui/cubit/workout_system_cubit.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/features/workouts/ui/screens/system_details_screen.dart';
 import 'package:flutter_coffeee/features/workouts/ui/widgets/workout_card.dart';
 
@@ -20,66 +14,31 @@ class _PresetProgramsState extends State<PresetPrograms>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocProvider(
-      create: (context) =>
-          WorkoutSystemCubit(WorkoutRepositoryImpl(WorkoutServices()))
-            ..fetchWorkoutSystems(),
-      child: BlocBuilder<WorkoutSystemCubit, WorkoutSystemState>(
-        builder: (context, state) {
-          if (state is WorkoutSystemLoad) {
-            return const Center(
-              child: CupertinoActivityIndicator(
-                color: AppColors.accentColor,
-                radius: 16,
-              ),
-            );
-          }
-          if (state is WorkoutSystemFail) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CustomText(text: state.errorMess),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context
-                        .read<WorkoutSystemCubit>()
-                        .fetchWorkoutSystems(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-          if (state is WorkoutSystemSuccess) {
-            final data = state.WorkoutModel;
-            return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: (context, index) => WorkoutCard(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SystemDetailsScreen(
-                      image: data[index].imageUrl ?? "",
-                      height: 250,
-                      width: double.infinity,
-                      systemId: data[index].id,
-                      description: data[index].description,
-                      name: data[index].name,
-                    ),
-                  ),
-                ),
-                image: data[index].imageUrl,
-                name: data[index].name,
-                description: data[index].description,
-              ),
-            );
-          }
-          return SizedBox.shrink();
-        },
+    final data = MockData.workoutSystems;
+
+    return ListView.builder(
+      itemCount: data.length,
+      itemBuilder: (context, index) => WorkoutCard(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SystemDetailsScreen(
+              image: data[index].imageUrl,
+              height: 250,
+              width: double.infinity,
+              systemId: data[index].id,
+              description: data[index].description,
+              name: data[index].name,
+            ),
+          ),
+        ),
+        image: data[index].imageUrl,
+        name: data[index].name,
+        description: data[index].description,
       ),
     );
   }

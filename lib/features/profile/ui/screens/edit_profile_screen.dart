@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_coffeee/core/constants/app_constants.dart';
-import 'package:flutter_coffeee/core/state/app_state.dart';
+import 'package:flutter_coffeee/core/mock/mock_data.dart';
 import 'package:flutter_coffeee/core/theme/app_colors.dart';
 import 'package:flutter_coffeee/core/utils/AppValidators.dart';
 import 'package:flutter_coffeee/core/utils/app_snackbars.dart';
@@ -30,13 +30,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final profile = AppState.instance.profile;
-    _fullNameController = TextEditingController(text: profile.fullName);
-    _emailController = TextEditingController(text: profile.email);
-    _heightController = TextEditingController(text: profile.height);
-    _weightController = TextEditingController(text: profile.weight);
-    _dobController = TextEditingController(text: profile.dateOfBirth);
-    _selectedGender = profile.gender;
+    _fullNameController = TextEditingController(text: MockData.userFullName);
+    _emailController = TextEditingController(text: MockData.userEmail);
+    _heightController = TextEditingController(text: MockData.userHeight);
+    _weightController = TextEditingController(text: MockData.userWeight);
+    _dobController = TextEditingController(text: MockData.userDateOfBirth);
+    _selectedGender = MockData.userGender;
   }
 
   @override
@@ -125,17 +124,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = true);
     await Future<void>.delayed(const Duration(milliseconds: 700));
 
-    AppState.instance.updateProfile(
-      AppState.instance.profile.copyWith(
-        fullName: _fullNameController.text.trim(),
-        email: _emailController.text.trim(),
-        height: _heightController.text.trim(),
-        weight: _weightController.text.trim(),
-        dateOfBirth: _dobController.text.trim(),
-        gender: _selectedGender,
-      ),
-    );
-
     if (!mounted) return;
     setState(() => _isSaving = false);
     AppSnackbars.showSuccess(context, 'Profile updated successfully');
@@ -144,8 +132,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = AppState.instance.profile;
-
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
@@ -161,7 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const ProfileScreenHeader(title: 'Edit Profile'),
                 const SizedBox(height: 32),
                 ProfileAvatar(
-                  imageUrl: profile.imageUrl,
+                  imageUrl: MockData.profileImageUrl,
                   size: AppConstants.editProfileAvatarSize,
                   showCameraBadge: true,
                   onCameraTap: _showPhotoOptions,
